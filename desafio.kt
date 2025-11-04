@@ -1,21 +1,126 @@
 // [Template no Kotlin Playground](https://pl.kotl.in/WcteahpyN)
 
-enum class Nivel { BASICO, INTERMEDIARIO, DIFICIL }
+class NomeInvalidoException(val mensagem: String) : Exception(mensagem)
+class DuracaoConteudoEducacionalInvalidoException(val mensagem: String) : Exception(mensagem)
+class MatriculaInvalidaException(val mensagem: String) : Exception(mensagem)
 
-class Usuario
+class Validacoes {
+    companion object {
+        @Throws(NomeInvalidoException::class)
+		fun validarNome(nome: String)  {
+  	 		if(nome.isBlank()) throw NomeInvalidoException("O nome do usuário não pode estar vazio")
+		}
 
-data class ConteudoEducacional(var nome: String, val duracao: Int = 60)
+		@Throws(DuracaoConteudoEducacionalInvalidoException::class)
+		fun validarDuracaoConteudoEducacional(duracao: Int)  {
+   	 		if(duracao <= 0) 
+    			throw DuracaoConteudoEducacionalInvalidoException(
+       	   	 	 "A duração do conteúdo educacional deve ser maior que zero"
+     	  	 )
+		}
 
-data class Formacao(val nome: String, var conteudos: List<ConteudoEducacional>) {
+		@Throws(MatriculaInvalidaException::class)
+		fun validarMatriculaEmFormacao(vararg usuarios: Usuario, inscritosFormacao: Set<Usuario>) {
+    		usuarios.forEach {
+            	if(inscritosFormacao.contains(it)) throw MatriculaInvalidaException("Usuário ${it.nome} já está cadastrado")
+        	}
+		}
+    }
+}
 
-    val inscritos = mutableListOf<Usuario>()
+enum class Nivel { BASICO, INTERMEDIARIO, AVANCADO }
+
+data class Usuario(val nome: String) {
+    init {
+        Validacoes.validarNome(nome)
+    }
+}
+
+/**
+* A [duracao] do [ConteudoEducacional] deve ser informada em minutos 
+ */
+data class ConteudoEducacional(val nome: String, val duracao: Int = 60) {
+    init {
+        Validacoes.validarNome(nome)
+        Validacoes.validarDuracaoConteudoEducacional(duracao)
+    }
+} 
+
+class Formacao(
+    val nome: String, 
+    val nivel: Nivel, 
+    val conteudosEducacionais: List<ConteudoEducacional>
+) {
+    init {
+       Validacoes.validarNome(nome)
+    }
+    val inscritos = mutableSetOf<Usuario>()
     
-    fun matricular(usuario: Usuario) {
-        TODO("Utilize o parâmetro $usuario para simular uma matrícula (usar a lista de $inscritos).")
+    fun matricular(vararg usuarios: Usuario) {
+        Validacoes.validarMatriculaEmFormacao(usuarios = *usuarios, inscritosFormacao = inscritos)
+        inscritos.addAll(usuarios)
     }
 }
 
 fun main() {
-    TODO("Analise as classes modeladas para este domínio de aplicação e pense em formas de evoluí-las.")
-    TODO("Simule alguns cenários de teste. Para isso, crie alguns objetos usando as classes em questão.")
+    try {
+        Usuario("")
+    } catch(e: Exception) {
+        println("Exceção de nome de usuário inválido capturada")
+    }
+    
+    try {
+        Formacao(nome = "  ", Nivel.BASICO, listOf(ConteudoEducacional(nome = "Introdução a linguagem Kotlin")))
+    } catch(e: Exception) {
+        println("Exceção de nome de Formação inválido capturada")
+    }
+    
+    try {
+        ConteudoEducacional(nome = "     ")
+    } catch(e: Exception) {
+        println("Exceção de nome de conteúdo educacional inválido capturada")
+    }
+    
+    try {
+        ConteudoEducacional(nome = "Kotlin", duracao = 0)
+    } catch(e: Exception) {
+        println("Exceção de duração de conteúdo educacional inválida capturada")
+    }
+   
+    val conteudoEducacional = ConteudoEducacional(nome = "Kotlin")
+    println(
+        """A duração padrão do conteúdo educacional ${conteudoEducacional.nome} 
+        deveria ser 60 min e é igual a ${conteudoEducacional.duracao} min"""
+    )
+     
+    val conteudosEducacionais = listOf(
+        ConteudoEducacional(nome = "Introdução a linguagem Kotlin"),
+        ConteudoEducacional(nome = "Programação Orientada a Objetos", duracao = 240),
+        ConteudoEducacional(nome = "Apresentação do Android Studio e Jetpack compose", duracao = 120)
+    )
+    
+    val desenvolvimentoAndroid = Formacao(
+        nome = "Desenvolvimento Android com Kotlin e Jetpack Compose", 
+        nivel = Nivel.INTERMEDIARIO,
+        conteudosEducacionais = conteudosEducacionais
+    )
+    
+    val usuario1 = Usuario("Hugo Lacerda")
+    val usuario2 = Usuario("Ana Maia")
+  	val usuario3 = Usuario("Emilia Lins")
+    
+    desenvolvimentoAndroid.matricular(usuario1, usuario2)
+    try{
+    	desenvolvimentoAndroid.matricular(usuario2, usuario3)
+    } catch(e: Exception) {
+        println("Exceção de matrícula inválida por aluno repetido capturada")
+    }
+    desenvolvimentoAndroid.matricular(usuario3)
+    println(
+        """Os usuários inscritos na formação ${desenvolvimentoAndroid.nome} são 
+        ${desenvolvimentoAndroid.inscritos.joinToString()}"""
+    )
+	println("""Os conteúdos educacionais da formação são: 
+            ${desenvolvimentoAndroid.conteudosEducacionais}"""
+           )
 }
