@@ -1,9 +1,25 @@
 // [Template no Kotlin Playground](https://pl.kotl.in/WcteahpyN)
 
+/**
+* Lançada para indicar que um [nome] em branco e portanto inválido foi passado
+*/
 class NomeInvalidoException(val mensagem: String) : Exception(mensagem)
+
+/**
+* Lançada para indicar que uma [duracao] inválida, menor ou igual a zero, foi atribuida a [ConteudoEducacional]
+*/
 class DuracaoConteudoEducacionalInvalidoException(val mensagem: String) : Exception(mensagem)
+
+/**
+* Lançada ao tentar [matricular] um [Usuario] que já está inscrito na [Formacao]
+*/
 class MatriculaInvalidaException(val mensagem: String) : Exception(mensagem)
 
+/**
+* Validador com métodos para garantir uma inicialização consistente das classes:
+* [Usuario], [ConteudoEducacional] e [Formacao]. Caso existam entradas inválidas os
+* métodos lançam exceções; 
+*/
 class Validacoes {
     companion object {
         @Throws(NomeInvalidoException::class)
@@ -28,8 +44,14 @@ class Validacoes {
     }
 }
 
+/**
+* Representa os níveis de dificuldade possíveis de uma [Formacao]
+*/
 enum class Nivel { BASICO, INTERMEDIARIO, AVANCADO }
 
+/**
+* Modelo de dados para representar um Usuário. O [nome] não pode ser nulo ou estar em branco
+*/
 data class Usuario(val nome: String) {
     init {
         Validacoes.validarNome(nome)
@@ -37,8 +59,9 @@ data class Usuario(val nome: String) {
 }
 
 /**
-* A [duracao] do [ConteudoEducacional] deve ser informada em minutos 
- */
+* Modelo de dados para representar um Conteúdo Educacional. A [duracao] do [ConteudoEducacional] deve 
+* ser informada em minutos e ser maior do que zero. O [nome] não deve ser nulo ou estar em branco 
+*/
 data class ConteudoEducacional(val nome: String, val duracao: Int = 60) {
     init {
         Validacoes.validarNome(nome)
@@ -46,6 +69,10 @@ data class ConteudoEducacional(val nome: String, val duracao: Int = 60) {
     }
 } 
 
+/**
+* Abstração de um Formação. O [nome] não deve ser nulo ou estar em branco. Ao tentar [matricular] um aluno 
+* já inscrito lança uma [MatriculaInvalidaException]
+*/
 class Formacao(
     val nome: String, 
     val nivel: Nivel, 
@@ -57,7 +84,7 @@ class Formacao(
     val inscritos = mutableSetOf<Usuario>()
     
     fun matricular(vararg usuarios: Usuario) {
-        Validacoes.validarMatriculaEmFormacao(usuarios = *usuarios, inscritosFormacao = inscritos)
+        Validacoes.validarMatriculaEmFormacao(usuarios = *usuarios, inscritosFormacao = inscritos.toSet())
         inscritos.addAll(usuarios)
     }
 }
